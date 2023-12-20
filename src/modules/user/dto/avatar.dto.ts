@@ -1,9 +1,13 @@
-import { IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { IsString } from 'class-validator'
 
-export class AvatarDto {
-  @IsString()
-  url: string;
+class AvatarDto {
+    @ApiPropertyOptional()
+    @IsString()
+    url: string
 
-  @IsString()
-  fileId: string;
+    @ApiPropertyOptional()
+    @IsString()
+    fileId: string
 }
+export default AvatarDto

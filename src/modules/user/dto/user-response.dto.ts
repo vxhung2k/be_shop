@@ -1,52 +1,66 @@
 import {
-  IsArray,
-  IsDate,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  Matches,
-} from 'class-validator';
-import { GenderEnum, UserTypeEnum } from '../const/user.enum';
-import { phoneRegex } from 'src/helper/regex/regex';
-import { AvatarDto } from './avatar.dto';
+    IsArray,
+    IsDate,
+    IsEmail,
+    IsEnum,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    Matches,
+    ValidateNested,
+} from 'class-validator'
+import { GenderEnum, UserTypeEnum } from '../const/user.enum'
+import { phoneRegex } from 'src/helper/regex/regex'
+import AvatarDto from './avatar.dto'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
 
-export class UserResponseCreateDto {
-  message?: string;
-  success?: boolean;
-  payload?: any;
-}
 class UserResponseDto {
-  @IsString()
-  id: string;
+    @ApiProperty()
+    @IsString()
+    id: string
 
-  @IsEmail()
-  email: string;
+    @ApiProperty()
+    @IsEmail()
+    email: string
 
-  @IsEnum({ enum: GenderEnum })
-  gender: GenderEnum;
+    @ApiPropertyOptional({ enum: GenderEnum, enumName: 'Gender' })
+    @IsEnum(GenderEnum)
+    @IsOptional()
+    gender?: GenderEnum
 
-  @IsEnum({ type: 'enum', enum: UserTypeEnum })
-  @IsNotEmpty()
-  user_type: UserTypeEnum;
+    @ApiProperty({ enum: UserTypeEnum, enumName: 'User_type' })
+    @IsEnum(UserTypeEnum)
+    @IsNotEmpty()
+    user_type: UserTypeEnum
 
-  @IsString()
-  fullName: string;
+    @ApiProperty()
+    @IsString()
+    fullName: string
 
-  @IsString()
-  fullAddress: string;
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    fullAddress?: string
 
-  @IsString()
-  @Matches(phoneRegex)
-  phone: string;
+    @ApiPropertyOptional()
+    @IsString()
+    @Matches(phoneRegex)
+    phone: string
 
-  @IsArray()
-  avatars?: AvatarDto[];
+    @ApiPropertyOptional({ type: () => AvatarDto, isArray: true })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => AvatarDto)
+    @IsOptional()
+    avatars?: AvatarDto[]
 
-  @IsDate()
-  createdAt: Date;
+    @ApiPropertyOptional()
+    @IsDate()
+    createdAt?: Date
 
-  @IsDate()
-  updatedAt: Date;
+    @ApiPropertyOptional()
+    @IsDate()
+    updatedAt?: Date
 }
-export default UserResponseDto;
+export default UserResponseDto
