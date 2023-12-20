@@ -27,12 +27,12 @@ class UserResponseDto {
     @ApiPropertyOptional({ enum: GenderEnum, enumName: 'Gender' })
     @IsEnum(GenderEnum)
     @IsOptional()
-    gender?: GenderEnum
+    gender?: string
 
     @ApiProperty({ enum: UserTypeEnum, enumName: 'User_type' })
     @IsEnum(UserTypeEnum)
     @IsNotEmpty()
-    user_type: UserTypeEnum
+    user_type: string
 
     @ApiProperty()
     @IsString()

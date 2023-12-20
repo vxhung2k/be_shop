@@ -33,12 +33,12 @@ class UserEntity {
     @Column({ type: 'enum', enum: GenderEnum })
     @Optional()
     @IsEnum(GenderEnum, { each: true })
-    public gender: GenderEnum
+    public gender: string
 
     @Column({ type: 'enum', enum: UserTypeEnum })
     @IsNotEmpty()
     @IsEnum(UserTypeEnum, { each: true })
-    public user_type: UserTypeEnum
+    public user_type: string
 
     @Column()
     @IsString()

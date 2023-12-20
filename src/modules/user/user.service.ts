@@ -5,7 +5,6 @@ import {
     NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { plainToClass } from 'class-transformer'
 import { Repository } from 'typeorm'
 import UserCreateDto from './dto/user-create.dto'
 import UserResponseDto from './dto/user-response.dto'
@@ -15,6 +14,7 @@ import * as bcrypt from 'bcrypt'
 import { map, omit } from 'lodash'
 import UserUpdateDto from './dto/user-update.dto'
 import { AvatarEntity, UserEntity } from 'src/entity/index.entity'
+import UserDeleteResponseDto from './dto/user-delete.dto'
 
 @Injectable()
 export class UserService implements IUserService {
@@ -51,7 +51,7 @@ export class UserService implements IUserService {
                     })
                     return avatar
                 })
-                console.log(2, avatars)
+
                 await this.avatarRepository
                     .createQueryBuilder()
                     .insert()
@@ -61,7 +61,7 @@ export class UserService implements IUserService {
                     where: { id: savedUser.id },
                     relations: ['avatars'],
                 })
-                console.log(updatedUser)
+
                 const userResponse: any = omit(updatedUser, [
                     'username',
                     'password',
@@ -69,7 +69,6 @@ export class UserService implements IUserService {
                 return userResponse
             }
         } catch (error) {
-            console.log(error)
             throw new HttpException(error, HttpStatus.EXPECTATION_FAILED)
         }
     }
@@ -94,6 +93,7 @@ export class UserService implements IUserService {
     ): Promise<UserResponseDto> {
         try {
             const { avatars, ...rest } = user
+            console.log(rest)
             const getUserById = await this.userRepository.findOne({
                 where: { id: id },
                 relations: ['avatars'],
@@ -131,14 +131,14 @@ export class UserService implements IUserService {
         }
     }
 
-    async deleteUser(id: string): Promise<any> {
+    async deleteUser(id: string): Promise<UserDeleteResponseDto> {
         try {
             const user = await this.userRepository.findOneBy({ id: id })
             if (!user) {
                 throw new NotFoundException('User not found')
             }
             await this.userRepository.remove(user)
-            const response: any = {
+            const response = {
                 message: 'delete user success',
                 success: true,
             }
@@ -147,13 +147,10 @@ export class UserService implements IUserService {
             throw new HttpException(error, 500)
         }
     }
-    async getUserByEmail(email: string): Promise<UserResponseDto | undefined> {
+    async getUserByEmail(email: string): Promise<UserEntity | undefined> {
         const user = await this.userRepository.findOneBy({ email: email })
         if (user) {
-            const userResponse = plainToClass(UserResponseDto, user, {
-                excludeExtraneousValues: true,
-            })
-            return userResponse
+            return user
         } else {
             throw new HttpException('User not found', HttpStatus.NOT_FOUND)
         }

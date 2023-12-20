@@ -9,19 +9,19 @@ import {
 import { phoneRegex } from 'src/helper/regex/regex'
 import { GenderEnum, UserTypeEnum } from '../const/user.enum'
 import AvatarDto from './avatar.dto'
-import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger'
+import { ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 
 class UserUpdateDto {
     @ApiPropertyOptional({ enum: GenderEnum, enumName: 'Gender' })
-    @IsEnum({ enum: GenderEnum })
+    @IsEnum(GenderEnum, { message: 'Gender not match GenderEnum' })
     @IsOptional()
-    gender?: GenderEnum
+    gender?: string
 
     @ApiPropertyOptional({ enum: UserTypeEnum, enumName: 'User_type' })
-    @IsEnum({ enum: UserTypeEnum })
+    @IsEnum(UserTypeEnum, { message: 'User_type not match UserTypeEnum' })
     @IsOptional()
-    user_type?: UserTypeEnum
+    user_type?: string
 
     @ApiPropertyOptional()
     @IsString()

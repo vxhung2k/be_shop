@@ -33,12 +33,12 @@ class UserCreateDto {
     @ApiPropertyOptional({ enum: GenderEnum, enumName: 'Gender' })
     @Optional()
     @IsEnum(GenderEnum, { each: true })
-    gender: GenderEnum
+    gender: string
 
     @ApiProperty({ enum: UserTypeEnum, enumName: 'User_type' })
     @Optional()
     @IsEnum(UserTypeEnum, { each: true })
-    user_type: UserTypeEnum
+    user_type: string
 
     @ApiPropertyOptional()
     @IsString()
