@@ -1,7 +1,11 @@
 import { UserEntity } from 'src/entity/index.entity'
 import SignInDto from '../dto/signIn.dto'
 import SignInResponseDto from '../dto/signIn.response.dto'
-import { ChangePasswordDto } from '../dto/changePassword.dto'
+import {
+    ChangePasswordDto,
+    EmailDto,
+    PasswordDto,
+} from '../dto/changePassword.dto'
 import { ResponseDto } from 'src/helper/common/response-dto/response.dto'
 
 export interface IAuthService {
@@ -10,5 +14,6 @@ export interface IAuthService {
     generateRefreshToken(user: UserEntity): Promise<string>
     signIn(data: SignInDto): Promise<SignInResponseDto>
     changePassword(data: ChangePasswordDto): Promise<ResponseDto>
-    // forgotPassword(): Promise<any>
+    sendMailResetPassword(email: EmailDto): void
+    resetPassword(token: string, password: PasswordDto): Promise<ResponseDto>
 }

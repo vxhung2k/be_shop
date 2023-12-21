@@ -4,9 +4,9 @@ import { IsBoolean, IsString } from 'class-validator'
 export class ResponseDto {
     @ApiPropertyOptional({ example: 'message abcs' })
     @IsString()
-    message: string
+    public message: string
 
     @ApiPropertyOptional({ example: true })
     @IsBoolean()
-    public success: string
+    public success: boolean
 }

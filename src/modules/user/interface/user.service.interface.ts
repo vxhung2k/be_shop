@@ -1,9 +1,9 @@
 import { UserEntity } from 'src/entity/index.entity'
+import { RoleResponseDto } from 'src/modules/role/dto/role.response.dto'
 import UserCreateDto from '../dto/user-create.dto'
 import UserDeleteResponseDto from '../dto/user-delete.dto'
 import UserResponseDto from '../dto/user-response.dto'
 import UserUpdateDto from '../dto/user-update.dto'
-import { RoleResponseDto } from 'src/modules/role/dto/role.response.dto'
 
 export interface IUserService {
     createUser(user: UserCreateDto): Promise<UserResponseDto>
@@ -12,5 +12,6 @@ export interface IUserService {
     deleteUser(id: string): Promise<UserDeleteResponseDto>
     getUserByEmail(email: string): Promise<UserEntity | undefined>
     getUserRoles(): Promise<RoleResponseDto[] | undefined>
+    updatePassword(userId: string, password: string): Promise<boolean>
 }
 export default IUserService

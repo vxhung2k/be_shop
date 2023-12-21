@@ -12,8 +12,8 @@ async function bootstrap() {
     app.useGlobalPipes(new ValidationPipe())
 
     const swaggerConfig = new DocumentBuilder()
-        .setTitle('API with NestJS')
-        .setDescription('API developed throughout the API with NestJS course')
+        .setTitle('API nestJS ')
+        .setDescription('API developed for ecommerce')
         .setVersion('1.0')
         .build()
 

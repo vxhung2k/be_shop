@@ -103,7 +103,6 @@ export class UserService implements IUserService {
     ): Promise<UserResponseDto> {
         try {
             const { avatars, ...rest } = user
-            console.log(rest)
             const getUserById = await this.userRepository.findOne({
                 where: { id: id },
                 relations: ['avatars'],
@@ -186,5 +185,16 @@ export class UserService implements IUserService {
             const { userId } = decoded
             return await this.roleService.getAllRoleByUserId(userId)
         }
+    }
+
+    async updatePassword(userId: string, password: string): Promise<boolean> {
+        const dataUpdate = { password: password }
+        const userUpdate = await this.userRepository
+            .createQueryBuilder()
+            .update(UserEntity)
+            .set(dataUpdate)
+            .where('id = :id', { id: userId })
+            .execute()
+        return !!userUpdate
     }
 }
