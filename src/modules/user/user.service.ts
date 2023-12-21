@@ -3,30 +3,40 @@ import {
     HttpStatus,
     Injectable,
     NotFoundException,
+    UnauthorizedException,
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import UserCreateDto from './dto/user-create.dto'
-import UserResponseDto from './dto/user-response.dto'
-//import UserUpdateDto from './dto/user-update.dto';
-import IUserService from './interface/user.service.interface'
 import * as bcrypt from 'bcrypt'
-import { map, omit } from 'lodash'
-import UserUpdateDto from './dto/user-update.dto'
+import { request } from 'express'
+import * as jwt from 'jsonwebtoken'
+import { map, omit, replace } from 'lodash'
 import { AvatarEntity, UserEntity } from 'src/entity/index.entity'
+import { Repository } from 'typeorm'
+import { RoleResponseDto } from '../role/dto/role.response.dto'
+import { RoleService } from '../role/role.service'
+import UserCreateDto from './dto/user-create.dto'
 import UserDeleteResponseDto from './dto/user-delete.dto'
+import UserResponseDto from './dto/user-response.dto'
+import UserUpdateDto from './dto/user-update.dto'
+import IUserService from './interface/user.service.interface'
 
 @Injectable()
 export class UserService implements IUserService {
+    private readonly jwt_secret: string
     constructor(
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
 
         @InjectRepository(AvatarEntity)
-        private avatarRepository: Repository<AvatarEntity>
-    ) {}
+        private avatarRepository: Repository<AvatarEntity>,
+        private readonly configService: ConfigService,
+        private readonly roleService: RoleService
+    ) {
+        this.jwt_secret = this.configService.get<string>('JWT_SECRET')
+    }
 
-    async createUser(user: UserCreateDto): Promise<UserResponseDto> {
+    async createUser(user: UserCreateDto): Promise<any> {
         try {
             const userExits = await this.userRepository.findOneBy({
                 email: user.email,
@@ -44,19 +54,17 @@ export class UserService implements IUserService {
                     password: hashedPassword,
                 })
                 const savedUser = await this.userRepository.save(newUser)
-                const newAvatars = map(avatars, (avatarDto) => {
-                    const avatar = this.avatarRepository.create({
-                        ...avatarDto,
-                        user: savedUser,
+                await Promise.all(
+                    map(avatars, async (avatarDto) => {
+                        const avatar = await this.avatarRepository.create({
+                            ...avatarDto,
+                            id: null,
+                            user: savedUser,
+                        })
+                        await this.avatarRepository.save(avatar)
+                        return avatar
                     })
-                    return avatar
-                })
-
-                await this.avatarRepository
-                    .createQueryBuilder()
-                    .insert()
-                    .values(newAvatars)
-                    .execute()
+                )
                 const updatedUser = await this.userRepository.findOne({
                     where: { id: savedUser.id },
                     relations: ['avatars'],
@@ -72,6 +80,7 @@ export class UserService implements IUserService {
             throw new HttpException(error, HttpStatus.EXPECTATION_FAILED)
         }
     }
+
     async getUserById(id: string): Promise<UserResponseDto | undefined> {
         try {
             const user = await this.userRepository.findOne({
@@ -87,6 +96,7 @@ export class UserService implements IUserService {
             throw new HttpException(error, 500)
         }
     }
+
     async updateUser(
         id: string,
         user: UserUpdateDto
@@ -147,12 +157,34 @@ export class UserService implements IUserService {
             throw new HttpException(error, 500)
         }
     }
+
     async getUserByEmail(email: string): Promise<UserEntity | undefined> {
         const user = await this.userRepository.findOneBy({ email: email })
         if (user) {
             return user
         } else {
             throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+        }
+    }
+
+    async getUserRoles(): Promise<RoleResponseDto[] | undefined> {
+        const { headers } = request
+        const { authorization } = headers
+        const accessToken = authorization
+            ? replace(authorization, 'Bearer', '').trim()
+            : undefined
+        if (!accessToken) {
+            throw new UnauthorizedException({
+                statusCode: 500,
+                message: 'not authorization',
+            })
+        }
+        const jwt_secret = this.configService.get<string>('JWT_SECRET')
+
+        const decoded = await jwt.verify(accessToken, jwt_secret)
+        if (decoded) {
+            const { userId } = decoded
+            return await this.roleService.getAllRoleByUserId(userId)
         }
     }
 }

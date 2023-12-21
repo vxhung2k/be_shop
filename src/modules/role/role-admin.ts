@@ -3,22 +3,22 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
-import { replace } from 'lodash'
-import { UserService } from '../user/user.service'
-import * as jwt from 'jsonwebtoken'
+import { RoleService } from './role.service'
+import { includes, map, replace } from 'lodash'
 import { ConfigService } from '@nestjs/config'
+import * as jwt from 'jsonwebtoken'
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
+export class RoleAdmin {
+    public readonly keyRole: string
     constructor(
-        private readonly userService: UserService,
-        private readonly configService: ConfigService
+        private readonly roleService: RoleService,
+        private readonly configService: ConfigService,
+        keyRole: string
     ) {
-        super()
+        this.keyRole = keyRole
     }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
+    async canActive(context: ExecutionContext): Promise<boolean> {
         try {
             const request = context.switchToHttp().getRequest()
             const { headers } = request
@@ -37,13 +37,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             const decoded = await jwt.verify(accessToken, jwt_secret)
             if (decoded) {
                 const { userId } = decoded
-                const user = await this.userService.getUserById(userId)
-                if (!user) {
+                const roles = await this.roleService.getAllRoleByUserId(userId)
+                if (!roles) {
                     return false
                 }
-                return true
+                return includes(map(roles, 'key'), this.keyRole)
             }
-            return false
         } catch (error) {
             throw new UnauthorizedException({
                 statusCode: 500,

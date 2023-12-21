@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import {
+    HttpException,
+    HttpStatus,
+    Injectable,
+    UnauthorizedException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as bcrypt from 'bcrypt'
 import * as jwt from 'jsonwebtoken'
@@ -7,6 +12,10 @@ import { UserService } from '../user/user.service'
 import SignInDto from './dto/signIn.dto'
 import SignInResponseDto from './dto/signIn.response.dto'
 import { IAuthService } from './interface/auth.service.interface'
+import { ResponseDto } from 'src/helper/common/response-dto/response.dto'
+import { ChangePasswordDto } from './dto/changePassword.dto'
+import { request } from 'express'
+import { replace } from 'lodash'
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -36,6 +45,7 @@ export class AuthService implements IAuthService {
         const payload = {
             username: user.username,
             userId: user.id,
+            user_type: user.user_type,
             exp: Math.floor(Date.now() / 1000) + +60 * 60 * 24,
         }
         return jwt.sign(payload, this.jwt_secret)
@@ -44,6 +54,7 @@ export class AuthService implements IAuthService {
         const payload = {
             username: user.username,
             userId: user.id,
+            user_type: user.user_type,
             exp: Math.floor(Date.now() / 1000) + +60 * 60 * 24 * 7,
         }
         return jwt.sign(payload, this.jwt_secret)
@@ -71,6 +82,30 @@ export class AuthService implements IAuthService {
                 error.message,
                 HttpStatus.EXPECTATION_FAILED
             )
+        }
+    }
+
+    async changePassword(data: ChangePasswordDto): Promise<ResponseDto> {
+        try {
+            const { password, confirm_password } = data
+            const { headers } = request
+            const { authorization } = headers
+            const accessToken = authorization
+                ? replace(authorization, 'Bearer', '').trim()
+                : undefined
+            if (!accessToken) {
+                throw new UnauthorizedException({
+                    statusCode: 500,
+                    message: 'not authorization',
+                })
+            }
+            const decoded = await jwt.verify(accessToken, this.jwt_secret)
+            if (decoded) {
+                const { userId } = decoded
+                const user = await this.userService.getUserById(userId)
+            }
+        } catch (error) {
+            throw new HttpException(error.message, HttpStatus.FAILED_DEPENDENCY)
         }
     }
 }

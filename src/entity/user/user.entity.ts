@@ -11,6 +11,7 @@ import {
 import { GenderEnum, UserTypeEnum } from '../../modules/user/const/user.enum'
 import { Optional } from '@nestjs/common'
 import { AvatarEntity } from '../index.entity'
+import { RoleEntity } from '../role/role.entity'
 
 @Entity('user')
 class UserEntity {
@@ -55,6 +56,9 @@ class UserEntity {
 
     @OneToMany(() => AvatarEntity, (avatar) => avatar.user, { cascade: true })
     public avatars: AvatarEntity[]
+
+    @OneToMany(() => RoleEntity, (role) => role.user, { cascade: true })
+    public roles: RoleEntity[]
 
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     public createdAt: Date

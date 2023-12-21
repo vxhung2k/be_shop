@@ -24,7 +24,6 @@ async function bootstrap() {
     const port = configService.get('PORT') ?? 3000
 
     await app.listen(port)
-
     logger.log(`==========================================================`)
 
     logger.log(`Environment Variable`, 'NestApplication')

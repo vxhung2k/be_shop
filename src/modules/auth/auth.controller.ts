@@ -9,7 +9,7 @@ import SignInResponseDto from './dto/signIn.response.dto'
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
-    @Post()
+    @Post('signIn')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'sign in' })
     @ApiResponse({
