@@ -1,0 +1,16 @@
+export const SORT_AVAILABLE = [
+    'fullName',
+    '-fullName',
+    'gender',
+    '-gender',
+    'user_type',
+    '-user_type',
+    'fullAddress',
+    '-fullAddress',
+    'phone',
+    '-phone',
+    'createdAt',
+    '-createdAt',
+    'updatedAt',
+    '-updatedAt',
+]

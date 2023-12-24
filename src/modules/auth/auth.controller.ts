@@ -10,7 +10,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { AuthService } from './auth.service'
 import SignInDto from './dto/signIn.dto'
 import SignInResponseDto from './dto/signIn.response.dto'
-import { ResponseDto } from 'src/helper/common/response-dto/response.dto'
+import { ResponseDto } from 'src/helper/response-dto/response.dto'
 import { ChangePasswordDto, EmailDto } from './dto/changePassword.dto'
 import { AuthAccessProtected } from './decorator/jwt-auth.decorator'
 
@@ -47,7 +47,6 @@ export class AuthController {
     @Post('send-mail-reset-password')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'send mail reset password' })
-    @AuthAccessProtected()
     async sendMailResetPassword(@Body() email: EmailDto) {
         return await this.authService.sendMailResetPassword(email)
     }

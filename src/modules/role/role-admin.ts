@@ -11,12 +11,14 @@ import * as jwt from 'jsonwebtoken'
 @Injectable()
 export class RoleAdmin {
     public readonly keyRole: string
+    public readonly jwt_secret: string
     constructor(
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
         keyRole: string
     ) {
         this.keyRole = keyRole
+        this.jwt_secret = this.configService.get<string>('JWT_SECRET')
     }
     async canActive(context: ExecutionContext): Promise<boolean> {
         try {
@@ -32,9 +34,8 @@ export class RoleAdmin {
                     message: 'not authorization',
                 })
             }
-            const jwt_secret = this.configService.get<string>('JWT_SECRET')
 
-            const decoded = await jwt.verify(accessToken, jwt_secret)
+            const decoded = await jwt.verify(accessToken, this.jwt_secret)
             if (decoded) {
                 const { userId } = decoded
                 const roles = await this.roleService.getAllRoleByUserId(userId)

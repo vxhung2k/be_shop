@@ -5,12 +5,10 @@ import {
     UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import * as bcrypt from 'bcrypt'
 import { request } from 'express'
-import * as jwt from 'jsonwebtoken'
 import { isEqual, replace } from 'lodash'
 import { UserEntity } from 'src/entity/index.entity'
-import { ResponseDto } from 'src/helper/common/response-dto/response.dto'
+import { ResponseDto } from 'src/helper/response-dto/response.dto'
 import { UserService } from '../user/user.service'
 import {
     ChangePasswordDto,
@@ -21,6 +19,7 @@ import SignInDto from './dto/signIn.dto'
 import SignInResponseDto from './dto/signIn.response.dto'
 import { IAuthService } from './interface/auth.service.interface'
 import { MailService } from '../mail/mail.service'
+import { HelperEncryptService } from 'src/helper/service/helper.encryption.service'
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -28,7 +27,8 @@ export class AuthService implements IAuthService {
     constructor(
         private readonly userService: UserService,
         private readonly configService: ConfigService,
-        private readonly mailService: MailService
+        private readonly mailService: MailService,
+        private readonly helperEncryptionService: HelperEncryptService
     ) {
         this.jwt_secret = this.configService.get<string>('JWT_SECRET')
     }
@@ -40,30 +40,15 @@ export class AuthService implements IAuthService {
             return undefined
         }
         const { password: hashedPassword } = user
-        const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
+        const isPasswordCorrect =
+            await this.helperEncryptionService.comparePassword(
+                password,
+                hashedPassword
+            )
         if (isPasswordCorrect) {
             return user
         }
         return undefined
-    }
-
-    async generateToken(user: UserEntity): Promise<string> {
-        const payload = {
-            username: user.username,
-            userId: user.id,
-            user_type: user.user_type,
-            exp: Math.floor(Date.now() / 1000) + +60 * 60 * 24,
-        }
-        return jwt.sign(payload, this.jwt_secret)
-    }
-    async generateRefreshToken(user: UserEntity): Promise<string> {
-        const payload = {
-            username: user.username,
-            userId: user.id,
-            user_type: user.user_type,
-            exp: Math.floor(Date.now() / 1000) + +60 * 60 * 24 * 7,
-        }
-        return jwt.sign(payload, this.jwt_secret)
     }
 
     async signIn(data: SignInDto): Promise<SignInResponseDto> {
@@ -72,8 +57,12 @@ export class AuthService implements IAuthService {
             if (!userCorrect) {
                 throw new HttpException('user not exist', HttpStatus.NOT_FOUND)
             }
-            const token = await this.generateToken(userCorrect)
-            const refreshToken = await this.generateRefreshToken(userCorrect)
+            const token =
+                await this.helperEncryptionService.generateToken(userCorrect)
+            const refreshToken =
+                await this.helperEncryptionService.generateRefreshToken(
+                    userCorrect
+                )
             if (token && refreshToken) {
                 const response: SignInResponseDto = {
                     token: token,
@@ -96,7 +85,10 @@ export class AuthService implements IAuthService {
             const { headers } = request
             const { authorization } = headers
             const accessToken = replace(authorization, 'Bearer', '').trim()
-            const decoded = await jwt.verify(accessToken, this.jwt_secret)
+            const decoded =
+                await this.helperEncryptionService.jwtVerifyAccessToken(
+                    accessToken
+                )
             const { userId } = decoded
             const user = await this.userService.getUserById(userId)
             const data_valid = { email: user.email, password: old_password }
@@ -113,7 +105,8 @@ export class AuthService implements IAuthService {
                     HttpStatus.BAD_REQUEST
                 )
             }
-            const hashedPassword = await bcrypt.hash(new_password, 10)
+            const hashedPassword =
+                await this.helperEncryptionService.hashPassword(new_password)
             const userUpdate = await this.userService.updatePassword(
                 user.id,
                 hashedPassword
@@ -146,13 +139,16 @@ export class AuthService implements IAuthService {
         token: string,
         password: PasswordDto
     ): Promise<ResponseDto> {
-        const decoded = await jwt.verify(token, this.jwt_secret)
+        const decoded =
+            await this.helperEncryptionService.jwtVerifyAccessToken(token)
         if (!decoded) {
             throw new UnauthorizedException()
         }
         const { userId } = decoded
 
-        const hashedPassword = await bcrypt.hash(password.password, 10)
+        const hashedPassword = await this.helperEncryptionService.hashPassword(
+            password.password
+        )
         const isUpdated = await this.userService.updatePassword(
             userId,
             hashedPassword

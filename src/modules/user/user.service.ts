@@ -3,18 +3,13 @@ import {
     HttpStatus,
     Injectable,
     NotFoundException,
-    UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
-import * as bcrypt from 'bcrypt'
-import { request } from 'express'
-import * as jwt from 'jsonwebtoken'
-import { map, omit, replace } from 'lodash'
+import { map, omit } from 'lodash'
 import { AvatarEntity, UserEntity } from 'src/entity/index.entity'
+import { HelperEncryptService } from 'src/helper/service/helper.encryption.service'
 import { Repository } from 'typeorm'
-import { RoleResponseDto } from '../role/dto/role.response.dto'
-import { RoleService } from '../role/role.service'
 import UserCreateDto from './dto/user-create.dto'
 import UserDeleteResponseDto from './dto/user-delete.dto'
 import UserResponseDto from './dto/user-response.dto'
@@ -31,7 +26,7 @@ export class UserService implements IUserService {
         @InjectRepository(AvatarEntity)
         private avatarRepository: Repository<AvatarEntity>,
         private readonly configService: ConfigService,
-        private readonly roleService: RoleService
+        private readonly helperEncryptionService: HelperEncryptService
     ) {
         this.jwt_secret = this.configService.get<string>('JWT_SECRET')
     }
@@ -48,7 +43,8 @@ export class UserService implements IUserService {
                 )
             } else {
                 const { avatars, password } = user
-                const hashedPassword = await bcrypt.hash(password, 10)
+                const hashedPassword =
+                    await this.helperEncryptionService.hashPassword(password)
                 const newUser = await this.userRepository.create({
                     ...user,
                     password: hashedPassword,
@@ -58,7 +54,6 @@ export class UserService implements IUserService {
                     map(avatars, async (avatarDto) => {
                         const avatar = await this.avatarRepository.create({
                             ...avatarDto,
-                            id: null,
                             user: savedUser,
                         })
                         await this.avatarRepository.save(avatar)
@@ -166,27 +161,6 @@ export class UserService implements IUserService {
         }
     }
 
-    async getUserRoles(): Promise<RoleResponseDto[] | undefined> {
-        const { headers } = request
-        const { authorization } = headers
-        const accessToken = authorization
-            ? replace(authorization, 'Bearer', '').trim()
-            : undefined
-        if (!accessToken) {
-            throw new UnauthorizedException({
-                statusCode: 500,
-                message: 'not authorization',
-            })
-        }
-        const jwt_secret = this.configService.get<string>('JWT_SECRET')
-
-        const decoded = await jwt.verify(accessToken, jwt_secret)
-        if (decoded) {
-            const { userId } = decoded
-            return await this.roleService.getAllRoleByUserId(userId)
-        }
-    }
-
     async updatePassword(userId: string, password: string): Promise<boolean> {
         const dataUpdate = { password: password }
         const userUpdate = await this.userRepository
@@ -196,5 +170,24 @@ export class UserService implements IUserService {
             .where('id = :id', { id: userId })
             .execute()
         return !!userUpdate
+    }
+
+    async getAllUser(
+        filters?: Record<string, any>,
+        sorts?: Record<string, any>,
+        limit?: number,
+        offset?: number
+    ): Promise<UserResponseDto[]> {
+        const users = await this.userRepository.find({
+            where: { ...filters },
+            order: { ...sorts },
+            relations: ['avatars'],
+            take: limit,
+            skip: offset,
+        })
+        const response = map(users, (user) => {
+            return omit(user, ['username', 'password'])
+        })
+        return response
     }
 }
