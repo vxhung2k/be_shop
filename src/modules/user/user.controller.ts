@@ -62,6 +62,7 @@ export class UserController {
         type: [UserResponseDto],
     })
     @AuthAccessProtected()
+    // @AuthRoleProtected('view-user')
     async getUserById(@Param('id') id: string): Promise<UserResponseDto> {
         return await this.userService.getUserById(id)
     }

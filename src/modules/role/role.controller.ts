@@ -8,10 +8,10 @@ import {
     Post,
 } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { RoleService } from './role.service'
 import { AuthAccessProtected } from '../auth/decorator/jwt-auth.decorator'
-import { RoleResponseCreateDto, RoleResponseDto } from './dto/role.response.dto'
 import { RoleCreateDto } from './dto/role.create.dto'
+import { RoleResponseCreateDto, RoleResponseDto } from './dto/role.response.dto'
+import { RoleService } from './role.service'
 
 @Controller('role')
 @ApiTags('BE/Role')
@@ -43,9 +43,9 @@ export class RoleController {
         type: [RoleResponseCreateDto],
     })
     async addRoleForUser(
-        @Param() id: string,
-        @Body() data: RoleCreateDto[]
+        @Param('id') id: string,
+        @Body() data: RoleCreateDto
     ): Promise<RoleResponseCreateDto> {
-        return await this.roleService.addRoleForUser(id, data)
+        return await this.roleService.addRoleForUser(id, data.roles)
     }
 }

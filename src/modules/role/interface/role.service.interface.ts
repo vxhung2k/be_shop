@@ -1,4 +1,3 @@
-import { RoleCreateDto } from '../dto/role.create.dto'
 import {
     RoleResponseCreateDto,
     RoleResponseDto,
@@ -9,6 +8,6 @@ export interface IRoleService {
     getUserRoles(): Promise<RoleResponseDto[] | undefined>
     addRoleForUser(
         userId: string,
-        data: RoleCreateDto[]
+        data: RoleResponseDto[]
     ): Promise<RoleResponseCreateDto>
 }

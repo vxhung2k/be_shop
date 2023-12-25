@@ -4,16 +4,15 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common'
-import { IRoleService } from './interface/role.service.interface'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { RoleEntity } from 'src/entity/index.entity'
-import { RoleResponseCreateDto, RoleResponseDto } from './dto/role.response.dto'
-import { isEmpty, map, omit, replace } from 'lodash'
-import { RoleCreateDto } from './dto/role.create.dto'
-import { UserService } from '../user/user.service'
 import { request } from 'express'
+import { isEmpty, map, omit, replace } from 'lodash'
+import { RoleEntity } from 'src/entity/index.entity'
 import { HelperEncryptService } from 'src/helper/service/helper.encryption.service'
+import { Repository } from 'typeorm'
+import { UserService } from '../user/user.service'
+import { RoleResponseCreateDto, RoleResponseDto } from './dto/role.response.dto'
+import { IRoleService } from './interface/role.service.interface'
 
 @Injectable()
 export class RoleService implements IRoleService {
@@ -41,7 +40,7 @@ export class RoleService implements IRoleService {
 
     async addRoleForUser(
         userId: string,
-        data: RoleCreateDto[]
+        data: RoleResponseDto[]
     ): Promise<RoleResponseCreateDto> {
         try {
             const user = await this.userService.getUserById(userId)
@@ -52,6 +51,8 @@ export class RoleService implements IRoleService {
                             ...roleDto,
                             user: user,
                         })
+                        role.key = roleDto.key
+
                         await this.roleRepository.save(role)
                         return omit(role, ['user', 'id'])
                     })

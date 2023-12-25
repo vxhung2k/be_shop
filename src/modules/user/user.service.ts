@@ -22,7 +22,6 @@ export class UserService implements IUserService {
     constructor(
         @InjectRepository(UserEntity)
         private userRepository: Repository<UserEntity>,
-
         @InjectRepository(AvatarEntity)
         private avatarRepository: Repository<AvatarEntity>,
         private readonly configService: ConfigService,

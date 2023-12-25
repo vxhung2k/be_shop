@@ -1,27 +1,32 @@
 import {
+    CanActivate,
     ExecutionContext,
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common'
-import { RoleService } from './role.service'
 import { includes, map, replace } from 'lodash'
 import { ConfigService } from '@nestjs/config'
 import * as jwt from 'jsonwebtoken'
+import { Reflector } from '@nestjs/core'
+import { RoleService } from '../role/role.service'
+import { ROLE_META_DATA_KEY } from '../role/consts/const'
 
 @Injectable()
-export class RoleAdmin {
-    public readonly keyRole: string
+export class RoleGuard implements CanActivate {
     public readonly jwt_secret: string
     constructor(
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
-        keyRole: string
+        private readonly reflector: Reflector
     ) {
-        this.keyRole = keyRole
         this.jwt_secret = this.configService.get<string>('JWT_SECRET')
     }
-    async canActive(context: ExecutionContext): Promise<boolean> {
+    async canActivate(context: ExecutionContext): Promise<boolean> {
         try {
+            const role = this.reflector.get<string>(
+                ROLE_META_DATA_KEY,
+                context.getHandler()
+            )
             const request = context.switchToHttp().getRequest()
             const { headers } = request
             const { authorization } = headers
@@ -42,7 +47,7 @@ export class RoleAdmin {
                 if (!roles) {
                     return false
                 }
-                return includes(map(roles, 'key'), this.keyRole)
+                return includes(map(roles, 'key'), role)
             }
         } catch (error) {
             throw new UnauthorizedException({
